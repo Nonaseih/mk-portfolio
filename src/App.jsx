@@ -3,7 +3,7 @@ import "./thin-tech.css";
 import { FaPython, FaNodeJs, FaReact, FaDatabase, FaGitAlt, FaDocker, FaPhone, FaEnvelope, FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { SiMongodb, SiExpress, SiTensorflow, SiPytorch, SiNumpy, SiScikitlearn, SiJavascript, SiTypescript } from "react-icons/si";
 import { FaTelegramPlane } from "react-icons/fa";
-import { motion, useAnimation } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 function App() {
@@ -21,6 +21,15 @@ function App() {
     const handleScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   return (
@@ -49,7 +58,7 @@ function App() {
           boxShadow: scrolled ? '0 4px 24px 0 rgba(0,255,128,0.08)' : 'none',
         }}
       >
-        <div className="flex items-center justify-between max-w-7xl mx-auto px-8 py-4">
+        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-4">
           {/* Logo */}
           <a
             href="#hero"
@@ -60,12 +69,13 @@ function App() {
               e.preventDefault();
               const el = document.getElementById("hero");
               if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              setMobileMenuOpen(false);
             }}
           >
             MK
           </a>
-          {/* Nav Links */}
-          <ul className="thin-tech flex gap-8 text-base">
+          {/* Desktop Nav Links */}
+          <ul className="thin-tech hidden md:flex gap-8 text-base desktop-menu">
             {sections.map((section) => (
               <li
                 key={section.label}
@@ -73,6 +83,7 @@ function App() {
                   ${currentSection === section.label ? 'text-green-400' : 'text-white hover:text-green-400'}`}
                 onClick={() => {
                   setCurrentSection(section.label);
+                  setMobileMenuOpen(false);
                   if (section.label === "HOME") {
                     const el = document.getElementById("hero");
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -87,14 +98,95 @@ function App() {
             ))}
           </ul>
           {/* Badge (right) */}
-          <div className="hidden md:block border border-green-400 px-3 py-1 text-green-400 text-xs tracking-widest w-32 text-center ml-8">
+          <div className="hidden md:block border border-green-400 px-3 py-1 text-green-400 text-xs tracking-widest w-32 text-center ml-8 desktop-button">
             {sections.find((s) => s.label === currentSection)?.file}
           </div>
+          {/* Mobile Hamburger */}
+          {isMobile && (
+            <motion.button 
+              className="mobile-menu-btn text-green-400"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                fontSize: '2rem', 
+                cursor: 'pointer',
+                zIndex: 100,
+                transition: 'all 0.3s ease'
+              }}>
+              {mobileMenuOpen ? '✕' : '☰'}
+            </motion.button>
+          )}
         </div>
+        {/* Slide-down Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && isMobile && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, y: -20 }}
+              animate={{ height: 'auto', opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="mobile-menu"
+              style={{ 
+                overflow: 'hidden', 
+                backgroundColor: '#000', // solid black background
+                borderTop: '1px solid rgba(20, 184, 166, 0.15)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
+              }}>
+              <motion.div 
+                initial="closed"
+                animate="open"
+                exit="closed"
+                variants={{
+                  open: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+                  closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } }
+                }}
+                style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {sections.map((section, i) => (
+                  <motion.a 
+                    key={i}
+                    onClick={e => { 
+                      e.preventDefault(); 
+                      setMobileMenuOpen(false); 
+                      setTimeout(() => {
+                        if (section.label === "HOME") {
+                          const el = document.getElementById("hero");
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          const el = document.getElementById(section.label.toLowerCase());
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        setCurrentSection(section.label);
+                      }, 300);
+                    }} 
+                    href={`#${section.label.toLowerCase()}`}
+                    variants={{
+                      open: { opacity: 1, x: 0 },
+                      closed: { opacity: 0, x: -20 }
+                    }}
+                    whileHover={{ x: 10, color: '#14b8a6' }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{ 
+                      color: '#d1d5db', 
+                      textDecoration: 'none', 
+                      padding: '0.75rem', 
+                      borderBottom: '1px solid rgba(20, 184, 166, 0.1)',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace'
+                    }}>
+                    {section.label}
+                  </motion.a>
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero Section */}
-      <section id="hero" className="flex flex-col items-center justify-center text-center py-24 z-10 relative select-none">
+      <section id="hero" className="flex flex-col items-center justify-center text-center py-20 sm:py-24 z-10 relative select-none px-4">
         {/* Terminal-style intro */}
         <div className="mb-4">
           <span className="text-green-400 thin-tech">moses@portfolio</span>
@@ -102,7 +194,7 @@ function App() {
           <span className="text-gray-400 thin-tech"> ./introduce.sh</span>
         </div>
         {/* Main headline with typewriter */}
-        <h1 className="text-5xl md:text-7xl font-extrabold mb-2 tracking-tight thin-tech" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-7xl font-extrabold mb-2 tracking-tight thin-tech" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
           <span className="text-green-400">
             <Typewriter
               words={[
@@ -142,7 +234,7 @@ function App() {
           </div>
         </div>
         {/* Buttons */}
-        <div className="flex flex-col md:flex-row gap-4 mt-6">
+        <div className="flex flex-col md:flex-row gap-4 mt-6 w-full max-w-xs md:max-w-none mx-auto items-center justify-center">
           <a href="#projects" className="bg-white text-black px-8 py-4 rounded border border-white font-mono text-lg shadow hover:bg-black hover:text-green-400 hover:border-green-400 transition-all thin-tech" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
             $ view_projects &rarr;
           </a>
@@ -153,7 +245,7 @@ function App() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-20 px-4 z-10 relative max-w-6xl mx-auto">
+      <section id="about" className="py-16 sm:py-20 px-2 sm:px-4 z-10 relative max-w-6xl mx-auto">
         <div className="mb-10">
           <div className="border-l-4 border-green-400 pl-4 mb-8">
             <div className="text-green-400 font-semibold mb-2 thin-tech">// Introduction</div>
@@ -174,7 +266,7 @@ function App() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
           <div className="border border-neutral-700 bg-black bg-opacity-60 rounded-lg py-8 flex flex-col items-center">
             <span className="text-4xl font-bold text-green-400 thin-tech"><AnimatedCounter to={50} duration={2.5} /></span>
             <span className="mt-2 text-gray-200 thin-tech">Happy Clients</span>
@@ -191,9 +283,9 @@ function App() {
       </section>
 
       {/* Experiences Section */}
-      <section id="experience" className="py-20 px-4 z-10 relative max-w-6xl mx-auto">
+      <section id="experience" className="py-16 sm:py-20 px-2 sm:px-4 z-10 relative max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold mb-8 text-blue-400 thin-tech">// Experience</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
           {/* AI Engineering */}
           <div className="border-l-4 border-green-400 pl-6 mb-6">
             <h3 className="text-green-400 text-xl font-semibold mb-2 thin-tech">AI Engineering</h3>
@@ -225,9 +317,9 @@ function App() {
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="py-20 px-4 z-10 relative max-w-6xl mx-auto">
+      <section id="projects" className="py-16 sm:py-20 px-2 sm:px-4 z-10 relative max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-green-400 thin-tech">// Projects</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
           {/* Project Card Example */}
           <div className="border border-neutral-700 bg-black bg-opacity-60 rounded-lg p-8 flex flex-col justify-between shadow-lg hover:border-green-400 transition-all">
             <h3 className="text-2xl font-bold mb-2 text-green-400 thin-tech">AI Chatbot Platform</h3>
@@ -286,9 +378,9 @@ function App() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 z-10 relative max-w-6xl mx-auto">
+      <section id="contact" className="py-16 sm:py-20 px-2 sm:px-4 z-10 relative max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-purple-400 thin-tech">// Contact</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
           {/* Direct Contact */}
           <div>
             <div className="mb-8">
@@ -359,8 +451,8 @@ function App() {
       </section>
 
       {/* Footer Section */}
-      <footer className="w-full py-12 px-4 z-10 relative max-w-6xl mx-auto mt-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+      <footer className="w-full py-10 sm:py-12 px-2 sm:px-4 z-10 relative max-w-6xl mx-auto mt-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 items-start">
           {/* Mission & Socials */}
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -663,3 +755,8 @@ function FixedNavbar({ sections, currentSection, setCurrentSection }) {
     </div>
   );
 }
+
+
+
+
+
